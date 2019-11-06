@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<head>
+<meta charset="utf-8">
+<title>Timed Moving Bubbles</title>
+<link rel="stylesheet" href="style/style.css" type="text/css" media="screen" />
+</head>
+
+<div id="main-wrapper">
+    
+	<h1 id="timecount">Time so far: <span class="cnt">10</span></h2>
+    <div id="chart"></div>
+    
+</div><!-- @end #main-wrapper -->
+
+
+<script src="js/d3.v5.min.js"></script>
+
+
+<script>
+// Dimensions of chart.
+const margin = { top: 20, right: 20, bottom: 20, left: 20 },
+      width = 900 - margin.left - margin.right,
+      height = 360 - margin.top - margin.bottom; 
+
+const svg = d3.select("#chart").append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+  .append("g")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+d3.select("#chart").style("width", (width+margin.left+margin.right)+"px");
+</script>
