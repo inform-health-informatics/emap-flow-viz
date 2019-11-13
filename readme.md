@@ -5,6 +5,12 @@ Demo visualisation for EMAP working on time and place
 
 
 # Todo
-- [ ] @TODO: (2019-11-07) create empty postgres database and table
-- [ ] @TODO: (2019-11-07) load simulated R data into postgres database
-- [ ] @TODO: (2019-11-07) modify python websocket server to read from postgres
+- [x] @TODO: (2019-11-07) create empty postgres database and table
+- [x] @TODO: (2019-11-07) load simulated R data into postgres database
+- [x] @TODO: (2019-11-07) modify python websocket server to read from postgres
+- [ ] @TODO: (2019-11-08) now create a really simple d3 plot that you actually understand; with a variable number of circles that can be in one of two positions
+- [ ] @TODO: (2019-11-12) @next version needs to maintain an array of current data; then bind to the dom via a key; and update the attributes if needed
+
+- [ ] @TODO: (2019-11-12) final plot idea
+      circles on circles; each edge circle represents a ward
+      ideally superimposed on an updating chord diagram that records for posterity the main arteries of movement
