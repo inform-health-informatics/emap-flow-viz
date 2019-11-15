@@ -8,8 +8,11 @@ Demo visualisation for EMAP working on time and place
 - [x] @TODO: (2019-11-07) create empty postgres database and table
 - [x] @TODO: (2019-11-07) load simulated R data into postgres database
 - [x] @TODO: (2019-11-07) modify python websocket server to read from postgres
-- [ ] @TODO: (2019-11-08) now create a really simple d3 plot that you actually understand; with a variable number of circles that can be in one of two positions
-- [ ] @TODO: (2019-11-12) @next version needs to maintain an array of current data; then bind to the dom via a key; and update the attributes if needed
+- [x] @TODO: (2019-11-08) now create a really simple d3 plot that you actually understand; with a variable number of circles that can be in one of two positions
+- [x] @TODO: (2019-11-12) @next version needs to maintain an array of current data; then bind to the dom via a key; and update the attributes if needed
+
+- [ ] @TODO: (2019-11-14) draw a path instead of / with the moving circle
+- [ ] @TODO: (2019-11-14) use forces to stop the circles overlying each other
 
 - [ ] @TODO: (2019-11-12) final plot idea
       circles on circles; each edge circle represents a ward

@@ -111,7 +111,21 @@ dt_pts %>% tabyl(resource)
 
 library(readr)
 readr::write_csv(dt_pts, 'data/ADT.csv')
+dt_pts <- readr::read_csv('data/ADT.csv')
+dt_pts
 
+# Note that DBplyr is automatically used by Dplyr when working with databases
+library(dplyr, warn.conflicts = FALSE)
+library(DBI)
 
-# dt_res <- setDT(hospital %>% get_mon_resources())
-# dt_res[order(resource)]
+conn <- DBI::dbConnect(RPostgreSQL::PostgreSQL(),
+                      dbname = "mart_flow",
+                      host = "localhost",
+                      user = "steve",
+                      password = ""
+)
+
+dbListTables(conn)
+head(dt_pts)
+
+dbDisconnect(conn)
