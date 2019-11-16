@@ -1,5 +1,6 @@
-// const (variables that won't change (but their properties can))
-const pts = []; // patients data
+// actions needed
+// TODO: need an inital data load for the initial state
+
 
 // Node size and spacing.
 const radius = 5,
@@ -50,8 +51,6 @@ function forceCluster() {
   return force;
 }
 
-
-
 // Force for collision detection.
 function forceCollide() {
   const alpha = 0.2; // fixed for greater rigidity!
@@ -89,6 +88,8 @@ function forceCollide() {
   return force;
 }
 
+
+
 // connect to the websocket
 const connection = new WebSocket('ws://localhost:8001/websocket');
 // debugging : temporary empty connection to avoid page errors
@@ -106,20 +107,11 @@ connection.onmessage = function(event) {
         "replication": newData.replication
     };
     console.log('new message');
-    makeUpdate(updateObject);
+    updatePts(updateObject);
 }
 
-// actions needed
-// - let's use the resource string to create coordinates
-// - append the updated data to the existing data
-// the array of data should be keyed on patient and ideally just contain the _current_ attributes
-// then the update the attributes and add new nodes if needed
-// - then select based on the key
-// - then using 'join' or similar redraw
-// - then add in transitions to make it look pretty
 
-
-function makeUpdate(msg) {
+function updatePts(msg, pts) {
     
     // prove that you can see the new data
     // console.log("data to update");
@@ -138,80 +130,100 @@ function makeUpdate(msg) {
         // console.log(pts[pts_index]);
 
     };
-    updateViz();
+    // commenting out because ...
+    // don't do the update when the message arrives; use the tick instead
+    // updateViz();
 }
 
 function updateViz () {
     console.log("Updating viz ...");
 
-    //
-    t = svg.transition().duration(1500).ease(i => i);
+//     //
+//     t = svg.transition().duration(1500).ease(i => i);
 
     
-    cs = svg.selectAll( "circle" )
-        .data(pts, function(d) {return d.name;})
-        .join(
-            enter => enter.append("circle")
-                .attr( "fill", "green" ) 
-                .attr( "cx", d=>groups[d.resource].x)
-                .attr( "cy", d=>groups[d.resource].y),
-            update => update
-                .attr( "fill", "blue" ) 
-                .call(update => update.transition(t)
-                    .attr( "cx", d=>groups[d.resource].x)
-                    .attr( "cy", d=>groups[d.resource].y)
-                ),
-            exit => exit
-                .attr( "fill", "red" ) 
-                .call(
-                    exit => exit.transition(t)
-                    )
-                .remove()
-        )
-            .attr( "r",  d=>scR(d.activity_time) )
-            .attr( "opacity", "0.1" );
+//     cs = svg.selectAll( "circle" )
+//         .data(pts, function(d) {return d.name;})
+//         .join(
+//             enter => enter.append("circle")
+//                 .attr( "fill", "green" ) 
+//                 .attr( "cx", d=>groups[d.resource].x)
+//                 .attr( "cy", d=>groups[d.resource].y),
+//             update => update
+//                 .attr( "fill", "blue" ) 
+//                 .call(update => update.transition(t)
+//                     .attr( "cx", d=>groups[d.resource].x)
+//                     .attr( "cy", d=>groups[d.resource].y)
+//                 ),
+//             exit => exit
+//                 .attr( "fill", "red" ) 
+//                 .call(
+//                     exit => exit.transition(t)
+//                     )
+//                 .remove()
+//         )
+//             .attr( "r",  d=>scR(d.activity_time) )
+//             .attr( "opacity", "0.1" );
 
 }
 
 function main() {
     // this is wrapper function for everything else
 
+    // const (variables that won't change (but their properties can))
+    // const pts = []; // patients data
+    const pts = d3.dsv(",", "../../data/ADT_head5.csv", function(d) {
+        // note returns a promise; not the actual data
+        return {
+            name: d.name,
+            start_time: d.start_time,
+            end_time: d.end_time,
+            activity_time: d.activity_time,
+            resource: d.resource,
+            replication: d.replication
+        };
+    });
     console.log(pts);
-    d3.timeout(3000)
+    pts.then(function(data) {
+        console.log(data);
+        // do the work here
 
-    const circle = svg
-        .selectAll("circle")
-        .data(pts)
-        .join("circle")
-          .attr("cx", d => d.x)
-          .attr("cy", d => d.y)
-          .attr("fill", d => d.color);
+    // d3.timeout(3000)
+
+    // const circle = svg
+    //     .selectAll("circle")
+    //     .data(pts)
+    //     .join("circle")
+    //       .attr("cx", d => d.x)
+    //       .attr("cy", d => d.y)
+    //       .attr("fill", d => d.color);
     
-    // Forces
-    const simulation = d3.forceSimulation(pts)
-    //     .force("x", d => d3.forceX(d.x))
-    //     .force("y", d => d3.forceY(d.y))
-    //     .force("cluster", forceCluster())
-    //     .force("collide", forceCollide())
-    //     .alpha(.09)
-    //     .alphaDecay(0);
+    // // Forces
+    // const simulation = d3.forceSimulation(pts)
+    // //     .force("x", d => d3.forceX(d.x))
+    // //     .force("y", d => d3.forceY(d.y))
+    // //     .force("cluster", forceCluster())
+    // //     .force("collide", forceCollide())
+    // //     .alpha(.09)
+    // //     .alphaDecay(0);
 
-    // Adjust position of circles.
-    simulation.on("tick", () => {    
-        circle
-            .attr("cx", d => d.x)
-            .attr("cy", d => d.y)
-            .attr("fill", d => groups[d.group].color);
-        });
+    // // Adjust position of circles.
+    // simulation.on("tick", () => {    
+    //     circle
+    //         .attr("cx", d => d.x)
+    //         .attr("cy", d => d.y)
+    //         .attr("fill", d => groups[d.group].color);
+    //     });
 
 
-    console.log(pts);
-    updateViz();
+    // console.log(pts);
+    // updateViz();
+    window.addEventListener("load", updatePts)
+    });
 }
 
 // end of function definitions
 
 // the code that runs the script
 // begin executing javascript once the page has loaded
-// main();
-window.addEventListener("load", main)
+main();

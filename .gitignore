@@ -4,3 +4,7 @@
 .Ruserdata
 lib/*
 external/d3/*
+node_modules
+*-lock*
+d3.js
+d3.min.js
