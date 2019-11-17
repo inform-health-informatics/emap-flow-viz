@@ -1,4 +1,7 @@
 // set up constants and non-d3 functions
+// array to hold the current position of the patients
+const pts = [];
+
 const margin = {top: 20, right: 20, bottom: 20, left: 20},
     padding = {top: 60, right: 60, bottom: 60, left: 60},
     outerWidth = 960,
@@ -20,6 +23,31 @@ const radius = 5,
     node_padding = 1, // Space between nodes
     cluster_padding = 5; // Space between nodes in different stages
 
+// push or update patient's current position
+function updatePts(msg, pts) {
+
+    // prove that you can see the new data
+    // console.log("data to update");
+
+    // return index of patient if already in array else -1
+    let pts_index = pts.findIndex( i => {return i.name === msg.name;});
+    // push new patient or splice (delete and insert) as necessary
+    if (pts_index === -1) {
+        console.log('new patient ' + pts.length);
+        pts.push(msg);
+    } else {
+        console.log('existing patient');
+        // console.log(pts[pts_index]);
+        pts.splice(pts_index, 1, msg);
+        // console.log('new patient');
+        // console.log(pts[pts_index]);
+
+    };
+    // commenting out because ...
+    // don't do the update when the message arrives; use the tick instead
+    // updateViz();
+}
+
 // can only use d3 functions below; they are not seen until the page is fully loaded
 // begin main
 window.onload = function main () {
@@ -36,6 +64,7 @@ const scX = d3.scaleLog().domain([1, 5000]).range([700, 100]),
     scY = d3.scaleLog().domain([1, 5000]).range([1, 250]),
     scR = d3.scaleLog().domain([1, 100]).range([1, 100]).clamp(true);
 
+// functions for forces
 // functions for forces for collision detections
 function forceCluster() {
     const strength = .15;
@@ -92,8 +121,42 @@ return force;
 }
 // end of forces
 
-// load initial data
-let pts = d3.csv("ADT_head5.csv", function(d) {
+function updateViz (update_speed=1500) {
+    console.log("Updating viz ...");
+
+    //
+    t = svg.transition().duration(update_speed).ease(i => i);
+
+    
+    cs = svg.selectAll( "circle" )
+        .data(pts, function(d) {return d.name;})
+        .join(
+            enter => enter.append("circle")
+                .attr( "fill", "green" ) 
+                .call(update => update.transition(t)
+                    .attr( "cx", d=>groups[d.resource].x)
+                    .attr( "cy", d=>groups[d.resource].y)
+                ),
+            update => update
+                .attr( "fill", "blue" ) 
+                .call(update => update.transition(t)
+                    .attr( "cx", d=>groups[d.resource].x)
+                    .attr( "cy", d=>groups[d.resource].y)
+                ),
+            exit => exit
+                .attr( "fill", "red" ) 
+                .call(
+                    exit => exit.transition(t)
+                    )
+                .remove()
+        )
+            .attr( "r",  d=>scR(d.activity_time) )
+            .attr( "opacity", "0.1" );
+
+}
+
+// load initial data and create the patients (pts_start) array
+const pts_start = d3.csv("ADT_head5.csv", function(d) {
     // note returns a promise; not the actual data
     return {
         name: d.name,
@@ -105,22 +168,43 @@ let pts = d3.csv("ADT_head5.csv", function(d) {
     };
 });
 
+// parse each initial patient as if it were a message
+pts_start.then(function(msgs) {
+    msgs.forEach(msg => {
+    console.log(msg);
+    updatePts(msg, pts);
+    });
+    // RECONSIDER: running updates outside of the message loop
+    updateTable();
+    updateViz(update_speed=500);
+});
+
 console.log(pts);
 
+d3.select("#viz_inspect")
+    .append("table");
 
-pts.then(function(dd) {
-    d3.select("#viz_inspect")
-    .append("table")
+// test function to print the original patient load
+function updateTable () {
 
-    .selectAll("tr")
-        .data(dd).enter()
-        .append("tr")
+    pts_start.then(function(dd) {
+    d3.select("#viz_inspect").select("table")
 
-    .selectAll("td")
-        .data(function(d) { return d3.values(d); }).enter()
-        .append("td")
-        .text(function(d) { return (d); });
-});
+        .selectAll("tr")
+            .data(dd).enter()
+            .append("tr")
+
+        .selectAll("td")
+            .data(function(d) { return d3.values(d); }).enter()
+            .append("td")
+            .text(function(d) { return (d); });
+    });
+}
+
+// updateTable();
+
+// now iterate through the initial CSV load as if they were messages
+
 
 svg.append("text")
   .attr("x", 100)
