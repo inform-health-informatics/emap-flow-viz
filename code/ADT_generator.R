@@ -126,6 +126,8 @@ conn <- DBI::dbConnect(RPostgreSQL::PostgreSQL(),
 )
 
 dbListTables(conn)
+dbWriteTable(conn, "pts")
+dbWriteTable(conn, "pts", dt_pts)
 head(dt_pts)
 
 dbDisconnect(conn)

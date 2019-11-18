@@ -3,6 +3,22 @@ Steve Harris
 
 Demo visualisation for EMAP working on time and place
 
+# Running the app
+
+Assumes you are in the mini37 python environment
+
+Assumes data is stored in a database called **mart flow**.
+Start postgres `pg_ctl -D . start` from `~/data/postgres`
+
+Then start the websocket_server at the project root 
+
+```python
+python3 websocket_server.py
+```
+
+
+
+
 
 # Todo
 - [x] @TODO: (2019-11-07) create empty postgres database and table

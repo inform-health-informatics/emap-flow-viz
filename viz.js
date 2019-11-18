@@ -12,6 +12,7 @@ const margin = {top: 20, right: 20, bottom: 20, left: 20},
     height = innerHeight - padding.top - padding.bottom;
 
 // Group coordinates and meta info.
+// these will be represented as 'nodes'
 const groups = {
     "ED": { x: width/5, y: height/2, color: "#FAF49A", cnt: 0, fullname: "ED" },
     "AMU": { x: 2.5*width/5, y: 1*height/4, color: "#BEE5AA", cnt: 0, fullname: "AMU" },
@@ -19,6 +20,7 @@ const groups = {
     "T8": { x: 4*width/5, y: height/2, color: "#79BACE", cnt: 0, fullname: "T8" },
 };
 
+// node parameters (for groups above)
 const radius = 5,
     node_padding = 1, // Space between nodes
     cluster_padding = 5; // Space between nodes in different stages
@@ -48,6 +50,7 @@ function updatePts(msg, pts) {
     // updateViz();
 }
 
+
 // can only use d3 functions below; they are not seen until the page is fully loaded
 // begin main
 window.onload = function main () {
@@ -59,67 +62,39 @@ const svg = d3.select("#viz").append("svg")
   .append("g")
     .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
-// set up scales
-const scX = d3.scaleLog().domain([1, 5000]).range([700, 100]),
-    scY = d3.scaleLog().domain([1, 5000]).range([1, 250]),
-    scR = d3.scaleLog().domain([1, 100]).range([1, 100]).clamp(true);
+// table inspect
+d3.select("#viz_inspect")
+    .append("table");
 
-// functions for forces
-// functions for forces for collision detections
-function forceCluster() {
-    const strength = .15;
-    let nodes;
+// test function to print the original patient load
+function updateTable () {
 
-    function force(alpha) {
-        const l = alpha * strength;
-        for (const d of nodes) {
-        d.vx -= (d.x - groups[d.group].x) * l;
-        d.vy -= (d.y - groups[d.group].y) * l;
-        }
-    }
-    force.initialize = _ => nodes = _;
+    let dd = pts.sort(function(a,b) {
+        let aa = a.rownum;
+        let bb = b.rownum;
+        return aa < bb ? +1 : aa > bb ? -1 : 0;
+    }).slice(0,10);
+    console.log(dd);
+    
+    d3.select("#viz_inspect").select("table")
 
-    return force;
+        .selectAll("tr")
+            // .data(dd).enter()
+            // .append("tr")
+            .data(dd, function(i) {return i.rownum;})
+            .join(
+                enter => enter.append("tr"),
+                update => update,
+                exit => exit.remove()
+            )
+
+        .selectAll("td")
+            .data(function(d) { return d3.values(d); }).enter()
+            .append("td")
+            .text(function(d) { return (d); }) // ;
+    // });
 }
 
-// Force for collision detection.
-function forceCollide() {
-const alpha = 0.2; // fixed for greater rigidity!
-const padding1 = padding; // separation between same-color nodes
-const padding2 = cluster_padding; // separation between different-color nodes
-let nodes;
-let maxRadius;
-
-function force() {
-    const quadtree = d3.quadtree(nodes, d => d.x, d => d.y);
-    for (const d of nodes) {
-    const r = d.r + maxRadius;
-    const nx1 = d.x - r, ny1 = d.y - r;
-    const nx2 = d.x + r, ny2 = d.y + r;
-    quadtree.visit((q, x1, y1, x2, y2) => {
-
-        if (!q.length) do {
-        if (q.data !== d) {
-            const r = d.r + q.data.r + (d.group === q.data.group ? padding1 : padding2);
-            let x = d.x - q.data.x, y = d.y - q.data.y, l = Math.hypot(x, y);
-            if (l < r) {
-            l = (l - r) / l * alpha;
-            d.x -= x *= l, d.y -= y *= l;
-            q.data.x += x, q.data.y += y;
-            }
-        }
-        // TODO: is this an error? expected a conditional and saw an assignment
-        } while (q = q.next);
-        return x1 > nx2 || x2 < nx1 || y1 > ny2 || y2 < ny1;
-    });
-    }
-}
-
-force.initialize = _ => maxRadius = d3.max(nodes = _, d => d.r) + Math.max(padding1, padding2);
-
-return force;
-}
-// end of forces
 
 function updateViz (update_speed=1500) {
     console.log("Updating viz ...");
@@ -134,14 +109,14 @@ function updateViz (update_speed=1500) {
             enter => enter.append("circle")
                 .attr( "fill", "green" ) 
                 .call(update => update.transition(t)
-                    .attr( "cx", d=>groups[d.resource].x)
-                    .attr( "cy", d=>groups[d.resource].y)
+                    .attr( "cx", d=>groups[d.resource].x + Math.random())
+                    .attr( "cy", d=>groups[d.resource].y + Math.random())
                 ),
             update => update
                 .attr( "fill", "blue" ) 
                 .call(update => update.transition(t)
-                    .attr( "cx", d=>groups[d.resource].x)
-                    .attr( "cy", d=>groups[d.resource].y)
+                    .attr( "cx", d=>groups[d.resource].x + Math.random())
+                    .attr( "cy", d=>groups[d.resource].y + Math.random())
                 ),
             exit => exit
                 .attr( "fill", "red" ) 
@@ -150,23 +125,34 @@ function updateViz (update_speed=1500) {
                     )
                 .remove()
         )
-            .attr( "r",  d=>scR(d.activity_time) )
+            .attr( "r",  d=>radius )
             .attr( "opacity", "0.1" );
 
 }
 
-// load initial data and create the patients (pts_start) array
-const pts_start = d3.csv("ADT_head5.csv", function(d) {
-    // note returns a promise; not the actual data
+function map_data2pts (d) {
     return {
+        rownum: +d.rownum,
         name: d.name,
-        start_time: d.start_time,
-        end_time: d.end_time,
-        activity_time: d.activity_time,
+        start_time: +d.start_time,
+        end_time: +d.end_time,
+        activity_time: +d.activity_time,
         resource: d.resource,
-        replication: d.replication
+        x: groups[d.resource].x,
+        y: groups[d.resource].y,
+        replication: +d.replication
     };
+}
+
+// load initial data and create the patients (pts_start) array
+const pts_start = d3.csv("data/ADT.csv", function(d, i) {
+    // slicing: see https://stackoverflow.com/a/58052738
+    return  i < 0 | i > 5
+    ? null
+    :  map_data2pts(d);
+    // note returns a promise; not the actual data
 });
+
 
 // parse each initial patient as if it were a message
 pts_start.then(function(msgs) {
@@ -181,37 +167,23 @@ pts_start.then(function(msgs) {
 
 console.log(pts);
 
-d3.select("#viz_inspect")
-    .append("table");
+// now set up connection and listener AFTER you have done the initial patient load
+// connect to the websocket
+const connection = new WebSocket('ws://localhost:8001/websocket');
+// debugging : temporary empty connection to avoid page errors
+// var connection = function () {};
 
-// test function to print the original patient load
-function updateTable () {
-
-    pts_start.then(function(dd) {
-    d3.select("#viz_inspect").select("table")
-
-        .selectAll("tr")
-            .data(dd).enter()
-            .append("tr")
-
-        .selectAll("td")
-            .data(function(d) { return d3.values(d); }).enter()
-            .append("td")
-            .text(function(d) { return (d); });
-    });
+// from the realtime example
+connection.onmessage = function(event) {
+    let newData = JSON.parse(event.data);
+    let updateObject = map_data2pts(newData);
+    console.log('new message');
+    updatePts(updateObject, pts);
+    updateTable();
+    updateViz();
 }
 
-// updateTable();
-
-// now iterate through the initial CSV load as if they were messages
-
-
-svg.append("text")
-  .attr("x", 100)
-  .attr("y", 100)
-  .text('hello world')
 
 };
 // end main
-
-console.log("so far so good");
+console.log("end main: so far so good");
